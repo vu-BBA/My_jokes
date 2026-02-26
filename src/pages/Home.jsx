@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import api from '../services/api';
+import { ErrorMessage, LoadingSpinner } from '../components/ui/Feedback';
 
 function Home() {
   const [joke, setJoke] = useState(null);
@@ -13,34 +15,32 @@ function Home() {
     setError(null);
 
     try {
-      const response = await fetch('https://joke-backend-azure.vercel.app/api/jokes/random');
-      if (!response.ok) throw new Error('Failed to fetch joke');
-
-      const data = await response.json();
+      const data = await api.jokes.getRandom();
       setJoke(data);
 
-      // Load likes for this joke
-      const likeKey = `likes_${data.id}`;
-      const likedKey = `liked_${data.id}`;
+      const jokeId = data.id || data._id;
+      const likeKey = `likes_${jokeId}`;
+      const likedKey = `liked_${jokeId}`;
 
-      const savedLikes = localStorage.getItem(likeKey);
-      const savedLiked = localStorage.getItem(likedKey);
-
-      setLikes(savedLikes ? parseInt(savedLikes) : 0);
-      setLiked(savedLiked === "true");
-
+      setLikes(parseInt(localStorage.getItem(likeKey)) || 0);
+      setLiked(localStorage.getItem(likedKey) === 'true');
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'جوک لائن کرنے میں خرابی ہوئی');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleLike = () => {
+  useEffect(() => {
+    fetchRandomJoke();
+  }, []);
+
+  const handleLike = useCallback(() => {
     if (!joke || liked) return;
 
-    const likeKey = `likes_${joke.id}`;
-    const likedKey = `liked_${joke.id}`;
+    const jokeId = joke.id || joke._id;
+    const likeKey = `likes_${jokeId}`;
+    const likedKey = `liked_${jokeId}`;
 
     const newLikes = likes + 1;
     setLikes(newLikes);
@@ -48,14 +48,23 @@ function Home() {
     setAnimate(true);
 
     localStorage.setItem(likeKey, newLikes);
-    localStorage.setItem(likedKey, true);
+    localStorage.setItem(likedKey, 'true');
 
     setTimeout(() => setAnimate(false), 300);
+  }, [joke, liked, likes]);
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'نامعلوم';
+    return new Date(dateString).toLocaleDateString('ur-PK', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
   };
 
   return (
     <div className="home">
-      <h1>Urdu Jokes</h1>
+      <h1> 😆اردو جوکس😆</h1>
       <p className="subtitle">اپنا موڈ خوش کریں!</p>
 
       <button 
@@ -66,34 +75,40 @@ function Home() {
         {loading ? 'Loading...' : 'نیا جوک لائیں'}
       </button>
 
-      {error && <div className="error">{error}</div>}
-      {loading && <div className="spinner"></div>}
+      {error && (
+        <ErrorMessage 
+          message={error} 
+          onRetry={fetchRandomJoke} 
+          onDismiss={() => setError(null)} 
+        />
+      )}
+      
+      {loading && <LoadingSpinner text="جوک لوڈ ہو رہا ہے..." />}
 
       {joke && !loading && (
         <div className="joke-card">
           <p className="joke-text">{joke.joke}</p>
 
           <div className="joke-meta">
-            <span>👤 {joke.author}</span>
-            <span>📅 {joke.date}</span>
+            <span>{joke.author || 'anonymous'}</span>
+            <span>{formatDate(joke.createdAt || joke.date)}</span>
           </div>
 
-          {/* ❤️ Animated Like Button */}
           <button
             onClick={handleLike}
             className="like-btn"
             style={{
-              color: liked ? "#ff1744" : "#555",
-              transform: animate ? "scale(1.5)" : "scale(1)",
-              transition: "all 0.3s ease",
-              fontSize: "20px",
-              border: "none",
-              background: "transparent",
-              cursor: liked ? "default" : "pointer",
-              marginTop: "10px"
+              color: liked ? '#ff1744' : '#555',
+              transform: animate ? 'scale(1.5)' : 'scale(1)',
+              transition: 'all 0.3s ease',
+              fontSize: '20px',
+              border: 'none',
+              background: 'transparent',
+              cursor: liked ? 'default' : 'pointer',
+              marginTop: '10px',
             }}
           >
-            ❤️ {likes}
+            {liked ? '♥' : '♡'} {likes}
           </button>
         </div>
       )}

@@ -1,68 +1,68 @@
-
-
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
+import { useJokes } from '../hooks/useJokes';
+import JokeCard from '../components/JokeCard';
+import { LoadingSpinner, ErrorMessage, SuccessMessage, EmptyState } from '../components/ui/Feedback';
 
 function AllJokes() {
-  const [jokes, setJokes] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [likes, setLikes] = useState({});
+  const {
+    jokes,
+    loading,
+    error,
+    success,
+    fetchJokes,
+    deleteJoke,
+    clearMessages,
+  } = useJokes();
 
   useEffect(() => {
     fetchJokes();
-    loadLikes();
-  }, []);
+  }, [fetchJokes]);
 
-  const loadLikes = () => {
-    const stored = localStorage.getItem('joke_likes');
-    if (stored) {
-      setLikes(JSON.parse(stored));
-    }
-  };
-
-  const handleLike = (jokeId) => {
-    const newLikes = { ...likes };
-    newLikes[jokeId] = (newLikes[jokeId] || 0) + 1;
-    setLikes(newLikes);
-    localStorage.setItem('joke_likes', JSON.stringify(newLikes));
-  };
-
-  const fetchJokes = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch('https://joke-backend-azure.vercel.app/api/jokes');
-      if (!response.ok) throw new Error('Failed to fetch jokes');
-      const data = await response.json();
-      setJokes(data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+  const handleDelete = async (id) => {
+    if (window.confirm('کیا آپ واقعی اس جوک کو حذف کرنا چاہتے ہیں؟')) {
+      await deleteJoke(id);
     }
   };
 
   return (
     <div className="all-jokes">
-      <h1>تمام جوکس</h1>
-      <p className="subtitle">یہاں سے تمام جوکس دیکھیں</p>
+      <div className="page-header">
+        <h1>تمام جوکس</h1>
+        <p className="subtitle">اپنے جوکس دیکھیں اور مینیج کریں</p>
+        <button onClick={fetchJokes} className="refresh-btn" disabled={loading}>
+          🔄 ریفریش
+        </button>
+      </div>
 
-      {error && <div className="error">{error}</div>}
+      {error && (
+        <ErrorMessage 
+          message={error} 
+          onRetry={fetchJokes} 
+          onDismiss={clearMessages} 
+        />
+      )}
+      {success && (
+        <SuccessMessage 
+          message={success} 
+          onDismiss={clearMessages} 
+        />
+      )}
 
-      {loading ? (
-        <div className="spinner"></div>
+      {loading && jokes.length === 0 ? (
+        <LoadingSpinner text="جوکس لوڈ ہو رہے ہیں..." />
       ) : jokes.length === 0 ? (
-        <div className="no-jokes">کوئی جوک نہیں ملی</div>
+        <EmptyState 
+          message="کوئی جوک نہیں ملی۔ اپنا پہلا جوک شامل کریں!" 
+          icon="😄" 
+        />
       ) : (
         <div className="jokes-grid">
           {jokes.map((joke) => (
-            <div key={joke.id} className="joke-card">
-              <p className="joke-text">{joke.joke}</p>
-              <div className="joke-meta">
-                <span>👤 {joke.author}</span>
-                <span>📅 {joke.date}</span>
-              </div>
-            </div>
+            <JokeCard
+              key={joke.id || joke._id}
+              joke={joke}
+              onDelete={handleDelete}
+            />
           ))}
         </div>
       )}

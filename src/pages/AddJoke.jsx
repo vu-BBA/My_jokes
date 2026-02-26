@@ -1,81 +1,49 @@
-
-
-import { useState } from 'react';
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useJokes } from '../hooks/useJokes';
+import JokeForm from '../components/JokeForm';
+import { ErrorMessage, SuccessMessage } from '../components/ui/Feedback';
 
 function AddJoke() {
-  const [joke, setJoke] = useState('');
-  const [author, setAuthor] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
+  const navigate = useNavigate();
+  const { createJoke, loading, error, success, clearMessages } = useJokes();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    setSuccess(null);
+  useEffect(() => {
+    clearMessages();
+  }, [clearMessages]);
 
+  const handleSubmit = async (formData) => {
     try {
-      const response = await fetch('https://joke-backend-azure.vercel.app/api/jokes', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ joke, author }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to add joke');
-      }
-
-      setSuccess('🎉 جوک کامیابی سے شامل ہو گیا!');
-      setJoke('');
-      setAuthor('');
+      await createJoke(formData);
+      setTimeout(() => {
+        navigate('/jokes');
+      }, 1500);
     } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+      // Error handled by hook
     }
   };
 
   return (
     <div className="add-joke">
-      <h1>جوک شامل کریں</h1>
-      <p className="subtitle">اپنا جوک بھیجیں اور ہنرائیں!</p>
+      <div className="page-header">
+        <h1>جوک شامل کریں</h1>
+        <p className="subtitle">اپنا مزاحیہ جوک دنیا کے ساتھ شیئر کریں!</p>
+      </div>
 
-      {error && <div className="error">{error}</div>}
-      {success && <div className="success">{success}</div>}
+      {error && (
+        <ErrorMessage 
+          message={error} 
+          onDismiss={clearMessages} 
+        />
+      )}
+      {success && (
+        <SuccessMessage 
+          message={success} 
+          onDismiss={clearMessages} 
+        />
+      )}
 
-      <form onSubmit={handleSubmit} className="joke-form">
-        <div className="form-group">
-          <label htmlFor="joke">جوک</label>
-          <textarea
-            id="joke"
-            value={joke}
-            onChange={(e) => setJoke(e.target.value)}
-            placeholder="اپنا جوک یہاں لکھیں..."
-            required
-            rows={4}
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="author">نام</label>
-          <input
-            type="text"
-            id="author"
-            value={author}
-            onChange={(e) => setAuthor(e.target.value)}
-            placeholder="اپنا نام لکھیں..."
-            required
-          />
-        </div>
-
-        <button type="submit" className="submit-btn" disabled={loading}>
-          {loading ? 'Submitting...' : 'جوک بھیجیں'}
-        </button>
-      </form>
+      <JokeForm onSubmit={handleSubmit} loading={loading} />
     </div>
   );
 }
