@@ -27,7 +27,7 @@ export function AuthProvider({ children }) {
 
   const login = useCallback(async (credentials) => {
     try {
-      const response = await api.post('/auth/login', credentials);
+      const response = await api.auth.login(credentials);
       const { token, user: userData } = response;
       
       const authData = {

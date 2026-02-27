@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 function Navbar() {
   const { isAdmin } = useAuth();
+  const [isOpen, setIsOpen] = useState(false);
 
   return (
     <nav className="navbar">
@@ -11,7 +13,17 @@ function Navbar() {
           <span className="logo-text"> جوکس ایپ</span>
         </Link>
         
-        <div className="navbar-links">
+        <button 
+          className={`navbar-toggle ${isOpen ? 'open' : ''}`} 
+          onClick={() => setIsOpen(!isOpen)}
+          aria-label="Toggle menu"
+        >
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        
+        <div className={`navbar-links ${isOpen ? 'active' : ''}`}>
           <Link to="/" className="nav-link">
             <span>جوکس🤓</span>
           </Link>
@@ -32,12 +44,6 @@ function Navbar() {
             </Link>
           )}
         </div>
-        
-        <button className="navbar-toggle">
-          <span></span>
-          <span></span>
-          <span></span>
-        </button>
       </div>
     </nav>
   );

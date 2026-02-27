@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+const BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
 
 const AUTH_STORAGE_KEY = 'joke_app_auth';
 
@@ -90,12 +90,17 @@ const api = {
   },
 
   jokes: {
-    getAll: () => api.get('/jokes'),
-    getById: (id) => api.get(`/jokes/${id}`),
-    getRandom: () => api.get('/jokes/random'),
-    create: (data) => api.post('/jokes', data),
-    update: (id, data) => api.put(`/jokes/${id}`, data),
-    delete: (id) => api.delete(`/jokes/${id}`),
+    getAll: () => api.get('/api/jokes'),
+    getById: (id) => api.get(`/api/jokes/${id}`),
+    getRandom: () => api.get('/api/jokes/random'),
+    create: (data) => api.post('/api/jokes', data),
+    update: (id, data) => api.put(`/api/jokes/${id}`, data),
+    delete: (id) => api.delete(`/api/jokes/${id}`),
+  },
+
+  auth: {
+    login: (data) => api.post('/api/auth/login', data),
+    register: (data) => api.post('/api/auth/register', data),
   },
 };
 
